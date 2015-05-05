@@ -1,0 +1,2 @@
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\ConsoleApplication2\bin\Debug\ConsoleApplication2.exe.config
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\ConsoleApplication2\bin\Debug\SystemStatusData.exe.config

@@ -1,0 +1,5 @@
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\ConsoleApplication2\bin\Debug\SystemStatusData.exe.config
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\ConsoleApplication2\bin\Debug\SystemStatusData.exe
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\ConsoleApplication2\bin\Debug\SystemStatusData.pdb
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\ConsoleApplication2\obj\Debug\SystemStatusData.exe
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\ConsoleApplication2\obj\Debug\SystemStatusData.pdb
