@@ -6,7 +6,7 @@ namespace SystemStatusData
     {
         public SystemStatusProcess()
         {
-            this.MachineId = MachineId;
+            this.MachineName = MachineName;
             this.ProcessId = ProcessId;
             this.ProcessName = ProcessName;
             this.ProcessorTime = ProcessorTime;
@@ -20,7 +20,7 @@ namespace SystemStatusData
             this.Time = Time;
         }
 
-        public string MachineId { get; set; }
+        public string MachineName { get; set; }
         public int ProcessId { get; set; }
         public string ProcessName { get; set; }
         public float ProcessorTime { get; set; }

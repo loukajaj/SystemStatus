@@ -8,18 +8,15 @@ namespace SystemStatusData
 {
     class SystemStatusData
     {
+        
 
         public SystemStatusData()
         {
             this.SystemStatusProcess = new List<SystemStatusProcess>();
+            this.NetworkStatusData = new List<NetworkStatusData>();
         }
 
-        public string InterfaceType { get; set; }
-        public string PhysicalAddress { get; set; }
-        public string OperationalStatus { get; set; }
-        public long BytesSent { get; set; }
-        public long BytesReceived { get; set; }
-
         public List<SystemStatusProcess> SystemStatusProcess { get; set; }
+        public List<NetworkStatusData> NetworkStatusData { get; set; }
     }
 }

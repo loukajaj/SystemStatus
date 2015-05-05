@@ -14,6 +14,7 @@ namespace SystemStatusData
 {
     class Program
     {
+        static SystemStatusData systemStatusData = new SystemStatusData();
         static NetworkInterface[] _nics = NetworkInterface.GetAllNetworkInterfaces();
         static Process[] _processes = Process.GetProcesses();
         static private List<SystemStatusProcess> processes = new List<SystemStatusProcess>();
@@ -63,7 +64,8 @@ namespace SystemStatusData
 
             foreach (var process in processes)
             {
-                SystemStatusData data = new SystemStatusData();
+                SystemStatusProcess data = new SystemStatusProcess();
+                
                 data.ProcessId = process.ProcessId;
                 data.ProcessName = process.ProcessName;
                 data.ProcessorTime = process.ProcessorTime;
@@ -74,16 +76,25 @@ namespace SystemStatusData
                 data.WorkingSetPrivateMemory = process.WorkingSetPrivateMemory;
                 data.Time = process.Time;
 
-                await collection.InsertOneAsync(data);
+                systemStatusData.SystemStatusProcess.Add(data);
             }
+
         }
 
         private static void NetworkUsage()
         {
-            Console.WriteLine("Number of interfaces {0}", _nics.Length);
+            NetworkStatusData data = new NetworkStatusData();
             foreach (NetworkInterface adapter in _nics)
             {
-                IPInterfaceProperties props = adapter.GetIPProperties(); ;
+                data.InterfaceType = adapter.NetworkInterfaceType;
+                data.PhysicalAddress = adapter.GetPhysicalAddress().ToString();
+                data.OperationalStatus = adapter.OperationalStatus.ToString();
+                data.BytesSent = adapter.GetIPv4Statistics().BytesSent;
+                data.BytesReceived = adapter.GetIPv4Statistics().BytesReceived;
+
+                systemStatusData.NetworkStatusData.Add(data);
+
+                /*IPInterfaceProperties props = adapter.GetIPProperties(); ;
                 Console.WriteLine();
                 Console.WriteLine(adapter.Description);
                 Console.WriteLine(String.Empty.PadLeft(adapter.Description.Length, '='));
@@ -92,7 +103,7 @@ namespace SystemStatusData
                 Console.WriteLine("  Operational status ...................... : {0}", adapter.OperationalStatus);
                 Console.WriteLine("  Bytes sent .............................. : {0}", adapter.GetIPv4Statistics().BytesSent);
                 Console.WriteLine("  Bytes received .......................... : {0}", adapter.GetIPv4Statistics().BytesReceived);
-                Console.WriteLine();
+                Console.WriteLine();*/
             }
         }
 
@@ -135,7 +146,9 @@ namespace SystemStatusData
             foreach (var process in _processes)
             {
                 process.Refresh();
+                
                 SystemStatusProcess systemData = new SystemStatusProcess();
+                systemData.MachineName = System.Environment.MachineName;
                 systemData.ProcessId = process.Id;
                 systemData.ProcessName = process.ToString();
                 PerformanceCounter totalProcessorTimeCounter = new PerformanceCounter("Process", "% Processor Time", process.ProcessName);
