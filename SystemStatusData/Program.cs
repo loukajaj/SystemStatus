@@ -4,20 +4,19 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Management;
 using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Wrappers;
 
 namespace SystemStatusData
 {
     class Program
     {
-        static SystemStatusData systemStatusData = new SystemStatusData();
-        static NetworkInterface[] _nics = NetworkInterface.GetAllNetworkInterfaces();
-        static Process[] _processes = Process.GetProcesses();
-        static private List<SystemStatusProcess> processes = new List<SystemStatusProcess>();
+        static SystemStatusData systemStatusData = new SystemStatusData(System.Environment.MachineName);
         protected static IMongoClient Client = new MongoClient();
         protected static IMongoDatabase Database = Client.GetDatabase("test");
 
@@ -32,22 +31,22 @@ namespace SystemStatusData
                 {
                     menu = int.Parse(Console.ReadLine());
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {}
 
                 switch (menu)
                 {
                     case 1:
-                        GetCpuLoad();
+                        StoreData();
                         break;
                     case 2:
                         PrintCpuLoad();
                         break;
                     case 3:
-                        NetworkUsage();
+                        GetNetworkLoad();
                         break;
                     case 4:
-                        StoreCpuData();
+                        StoreData();
                         break;
                     case 5:
                         break;
@@ -58,35 +57,106 @@ namespace SystemStatusData
             }
         }
 
-        private static async void StoreCpuData()
+        private static async void StoreData()
         {
-            var collection = Database.GetCollection<SystemStatusData>("cpudata");
+            Console.WriteLine("Gathering system information and writing to disk, please wait...");
+            GetTotalRamValues();
+            systemStatusData.ProcessorCount = Environment.ProcessorCount;
+            systemStatusData.Time = DateTime.Now;
 
-            foreach (var process in processes)
+            bool addToDb = true;
+            try
             {
-                SystemStatusProcess data = new SystemStatusProcess();
-                
-                data.ProcessId = process.ProcessId;
-                data.ProcessName = process.ProcessName;
-                data.ProcessorTime = process.ProcessorTime;
-                data.ProcessorUserTime = process.ProcessorUserTime;
-                data.PrivilegedProcessorTime = process.PrivilegedProcessorTime;
-                data.WorkingSetMemory = process.WorkingSetMemory;
-                data.WorkingSetPeakMemory = process.WorkingSetPeakMemory;
-                data.WorkingSetPrivateMemory = process.WorkingSetPrivateMemory;
-                data.Time = process.Time;
-
-                systemStatusData.SystemStatusProcess.Add(data);
+                GetCpuLoad();
+            }
+            catch (Exception e)
+            {
+                addToDb = false;
+                Console.WriteLine("Failed to fetch CPU information");
+                Console.WriteLine(e);
+            }
+            try
+            {
+                GetNetworkLoad();
+            }
+            catch (Exception e)
+            {
+                addToDb = false;
+                Console.WriteLine("Failed to fetch network information");
+                Console.WriteLine(e);
+            }
+            try
+            {
+                GetMemoryLoad();
+            }
+            catch (Exception e)
+            {
+                addToDb = false;
+                Console.WriteLine("Failed to fetch memory information");
+                Console.WriteLine(e);
             }
 
+            if (addToDb)
+            {
+                Console.WriteLine("System information successfully stored");
+                var collection = Database.GetCollection<SystemStatusData>("SystemStatusData");
+                await collection.InsertOneAsync(systemStatusData);
+            }
         }
 
-        private static void NetworkUsage()
+        private static void GetTotalRamValues()
         {
-            NetworkStatusData data = new NetworkStatusData();
-            foreach (NetworkInterface adapter in _nics)
+            PerformanceCounter usedRamCounter = new PerformanceCounter();
+            usedRamCounter.CounterName = "Committed Bytes";
+            usedRamCounter.CategoryName = "Memory";
+            long usedRam = (long) usedRamCounter.NextValue();
+            systemStatusData.UsedRam = usedRam;
+
+            PerformanceCounter freeRamCounter = new PerformanceCounter();
+            freeRamCounter.CounterName = "Available Bytes";
+            freeRamCounter.CategoryName = "Memory";
+            long freeRam = (long) freeRamCounter.NextValue();
+            systemStatusData.FreeRam = freeRam;
+
+            systemStatusData.TotalRam = freeRam + usedRam;
+        }
+
+        private static void GetMemoryLoad()
+        {
+            Process[] processes = Process.GetProcesses();
+            foreach (var process in processes)
             {
-                data.InterfaceType = adapter.NetworkInterfaceType;
+                MemoryStatus memStat = new MemoryStatus();
+                memStat.PhysicalMemoryUsage = process.WorkingSet64;
+                memStat.BasePriority = process.BasePriority;
+                try
+                {
+                    memStat.PriorityClass = process.PriorityClass.ToString();
+                }
+                catch (Exception)
+                {
+                    memStat.PriorityClass = "Unavailable";
+                }
+                
+                memStat.PagedSystemMemorySize = process.PagedSystemMemorySize64;
+                memStat.PagedMemorySize = process.PagedMemorySize64;
+                memStat.VirtualMemorySize = process.VirtualMemorySize64;
+                memStat.NonpagedSystemMemorySize = process.NonpagedSystemMemorySize64;
+                memStat.PeakPagedMemorySize = process.PeakPagedMemorySize64;
+                memStat.PeakVirtualMemorySize = process.PeakVirtualMemorySize64;
+                memStat.PeakWorkingSetMemorySize = process.PeakWorkingSet64;
+                
+                systemStatusData.MemoryStatus.Add(memStat);
+            }
+        }
+
+        private static void GetNetworkLoad()
+        {
+            NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface adapter in nics)
+            {
+                NetworkStatusData data = new NetworkStatusData();
+                data.InterfaceType = adapter.NetworkInterfaceType.ToString();
                 data.PhysicalAddress = adapter.GetPhysicalAddress().ToString();
                 data.OperationalStatus = adapter.OperationalStatus.ToString();
                 data.BytesSent = adapter.GetIPv4Statistics().BytesSent;
@@ -107,50 +177,15 @@ namespace SystemStatusData
             }
         }
 
-        private static async void PrintCpuLoad()
-        {
-            /*foreach (var process in processes)
-            {
-                Console.WriteLine();
-                Console.WriteLine("{0}", process.ProcessName);
-                Console.WriteLine(String.Empty.PadLeft(process.ProcessName.Length, '='));
-                Console.WriteLine("  Process id .............................. : {0}", process.ProcessId);
-                Console.WriteLine("  Processor time .......................... : {0}", process.ProcessorTime);
-                Console.WriteLine("  Processor user time ..................... : {0}", process.ProcessorUserTime);
-                Console.WriteLine("  Privileged processor time ............... : {0}", process.PrivilegedProcessorTime);
-                Console.WriteLine("  Working set memory ...................... : {0}", process.WorkingSetMemory);
-                Console.WriteLine("  Working set peak memory ................. : {0}", process.WorkingSetPeakMemory);
-                Console.WriteLine("  Working set private memory .............. : {0}", process.WorkingSetPrivateMemory);
-                Console.WriteLine("  Thread count ............................ : {0}", process.ThreadCount);
-                Console.WriteLine("  Handle count ............................ : {0}", process.HandleCount);
-                Console.WriteLine();
-            }*/
-
-            var collection = Database.GetCollection<BsonDocument>("cpudata");
-            var count = await collection.CountAsync(new BsonDocument());
-            var query = new BsonDocument();
-            using (var cursor = await collection.FindAsync<BsonDocument>(query))
-            {
-                while (await cursor.MoveNextAsync())
-                {
-                    foreach (var doc in cursor.Current)
-                    {
-                        Console.WriteLine("{0}", doc.GetElement("Name").Value);
-                    }
-                }
-            }
-        }
-
         public static void GetCpuLoad()
         {
-            foreach (var process in _processes)
+            Process[] processes = Process.GetProcesses();
+            foreach (var process in processes)
             {
                 process.Refresh();
-                
                 SystemStatusProcess systemData = new SystemStatusProcess();
-                systemData.MachineName = System.Environment.MachineName;
+                systemData.Processname = process.ProcessName.ToString();
                 systemData.ProcessId = process.Id;
-                systemData.ProcessName = process.ToString();
                 PerformanceCounter totalProcessorTimeCounter = new PerformanceCounter("Process", "% Processor Time", process.ProcessName);
                 systemData.ProcessorTime = totalProcessorTimeCounter.NextValue();
 
@@ -175,12 +210,28 @@ namespace SystemStatusData
                 PerformanceCounter handleCounter = new PerformanceCounter("Process", "Handle Count", process.ProcessName);
                 systemData.HandleCount = handleCounter.NextValue();
 
-                systemData.Time = DateTime.Now;
-
-                processes.Add(systemData);
+                systemStatusData.SystemStatusProcess.Add(systemData);
             }
+        }
 
-            Console.WriteLine("System analysis done");
+        private static async void PrintCpuLoad()
+        {
+            /*foreach (var process in processes)
+            {
+                Console.WriteLine();
+                Console.WriteLine("{0}", process.ProcessName);
+                Console.WriteLine(String.Empty.PadLeft(process.ProcessName.Length, '='));
+                Console.WriteLine("  Process id .............................. : {0}", process.ProcessId);
+                Console.WriteLine("  Processor time .......................... : {0}", process.ProcessorTime);
+                Console.WriteLine("  Processor user time ..................... : {0}", process.ProcessorUserTime);
+                Console.WriteLine("  Privileged processor time ............... : {0}", process.PrivilegedProcessorTime);
+                Console.WriteLine("  Working set memory ...................... : {0}", process.WorkingSetMemory);
+                Console.WriteLine("  Working set peak memory ................. : {0}", process.WorkingSetPeakMemory);
+                Console.WriteLine("  Working set private memory .............. : {0}", process.WorkingSetPrivateMemory);
+                Console.WriteLine("  Thread count ............................ : {0}", process.ThreadCount);
+                Console.WriteLine("  Handle count ............................ : {0}", process.HandleCount);
+                Console.WriteLine();
+            }*/
         }
 
         public static void PrintMenu()
@@ -188,7 +239,7 @@ namespace SystemStatusData
             Console.WriteLine();
             Console.WriteLine("Menu");
             Console.WriteLine("===========");
-            Console.WriteLine("1. CPU load");
+            Console.WriteLine("1. Gather and store data");
             Console.WriteLine("2. Print CPU load");
             Console.WriteLine("3. Network usage");
             Console.WriteLine("4. Store CPU data");

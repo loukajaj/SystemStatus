@@ -1,0 +1,13 @@
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\SystemStatusData.exe.config
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\SystemStatusData.exe
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\SystemStatusData.pdb
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\MongoDB.Bson.dll
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\MongoDB.Driver.Core.dll
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\MongoDB.Driver.dll
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\MongoDB.Driver.Legacy.dll
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\MongoDB.Bson.xml
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\MongoDB.Driver.xml
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\bin\Debug\MongoDB.Driver.Legacy.xml
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\obj\Debug\SystemStatusData.exe
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\obj\Debug\SystemStatusData.pdb
+c:\users\loukajaj\documents\visual studio 2013\Projects\SystemStatusData\SystemStatusData\obj\Debug\SystemStatusData.csprojResolveAssemblyReference.cache
